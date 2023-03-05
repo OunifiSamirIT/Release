@@ -1,0 +1,22 @@
+async addDataObj(id: string, searchnavbarDTO: SearchnavbarDTO): Promise<SearchNavBar | undefined> {
+    const thedatatoAdd = await this.SearchNavBarwModel.findOne({ _id: id });
+  
+    if (!thedatatoAdd) {
+      throw new HttpException('searchnavbar data Not exist', HttpStatus.NOT_FOUND);
+    }
+  
+    const searchObjType = searchnavbarDTO.constructor.name;
+    const existingTitles = thedatatoAdd.data.filter(item => item.constructor.name === searchObjType).map(item => item.data);
+  
+    if (existingTitles.includes(searchnavbarDTO.data)) {
+      throw new HttpException('Title must be unique', HttpStatus.NOT_FOUND);
+
+    }
+  
+    thedatatoAdd.data.push(searchnavbarDTO);
+  
+    const searchnavbar = await thedatatoAdd.save();
+  
+    return searchnavbar;
+  }
+  

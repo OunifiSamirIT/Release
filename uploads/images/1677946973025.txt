@@ -1,0 +1,678 @@
+// ** Custom Components
+import Avatar from "@components/avatar";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import withReactContent from "sweetalert2-react-content";
+import Swal from "sweetalert2";
+import makeAnimated from "react-select/animated";
+import classNames from "classnames";
+import "@styles/react/libs/flatpickr/flatpickr.scss";
+import moment from "moment/moment";
+// ** Icons Imports
+import {
+  Calendar,
+  Award,
+  UserCheck,
+  Mail,
+  Plus,
+  Flag,
+  Edit3,
+} from "react-feather";
+import { useForm, Controller } from "react-hook-form";
+import {
+  AddInterview,
+  getAllinterview,
+  updateInterview,
+  deleteinterview,
+} from "../store";
+import { useDispatch, useSelector } from "react-redux";
+import { isEmpty, isNil } from "lodash";
+import Flatpickr from "react-flatpickr";
+import { selectThemeColors } from "@utils";
+// ** Reactstrap Imports
+import {
+  Button,
+  Card,
+  CardTitle,
+  Row,
+  Col,
+  Label,
+  Input,
+  Modal,
+  CardBody,
+  ModalBody,
+  ModalHeader,
+  CardText,
+  FormFeedback,
+} from "reactstrap";
+
+// ** Images Imports
+import illustration from "@src/assets/images/illustration/email.svg";
+
+// ** Styles
+import "@styles/react/libs/tables/react-dataTable-component.scss";
+import ParListSelect from "../../../components/parListSelect";
+import UserSelect from "../../../components/userSelect";
+
+const Cardsinterview = () => {
+  const [show, setShow] = useState(false);
+  const [showdelet, setShowdelet] = useState(false);
+
+  const [modalType, setModalType] = useState("Add New");
+  const [modalTypedelet, setModalTypedelet] = useState("delete");
+
+  const [query, setQuery] = useState("");
+  const [email, setEmail] = useState("");
+
+  const [picker, setPicker] = useState("");
+  const MySwal = withReactContent(Swal);
+  const dispatch = useDispatch();
+  const interview = useSelector((state) => state.interviews);
+
+  useEffect(() => {
+    console.log("test", interview.allInterview);
+    if (isEmpty(interview?.allInterview)) {
+      dispatch(getAllinterview());
+    }
+  }, []);
+  const {
+    control,
+    setError,
+    setValue,
+    reset,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      title: "",
+      status: "",
+      description: "",
+      dateInterview: "",
+      heureInterview: "",
+      candidate: "",
+      interviewer: "",
+    },
+  });
+
+  const onSubmit = (data) => {
+    if (
+      Object.keys(data)
+        .filter((el) => el !== "status")
+        .every((field) => !isEmpty(data[field]))
+    ) {
+      setShow(false);
+      console.log("tesyt ", data.status);
+      const interviewedata = {
+        title: data.title,
+        description: data.description,
+        heureInterview: moment(data?.heureInterview[0]).format("HH:mm"),
+        interviewer: data.interviewer.value,
+        dateInterview: moment(data?.dateInterview[0]).format("YYYY-MM-DD"),
+        candidate: data.candidate.value,
+        status: data.status.value,
+        id: data?.id,
+      };
+
+      if (modalType === "Edit") {
+        console.log(interviewedata);
+
+        dispatch(updateInterview(interviewedata)).then(() => {
+          MySwal.fire({
+            title: "Success!",
+            text: `Interview Edited`,
+            icon: "success",
+            customClass: {
+              confirmButton: "btn btn-primary",
+            },
+            buttonsStyling: false,
+          });
+        });
+      } else {
+        dispatch(AddInterview(interviewedata)).then(() => {
+          MySwal.fire({
+            title: "Success!",
+            text: `Interview Added`,
+            icon: "success",
+            customClass: {
+              confirmButton: "btn btn-primary",
+            },
+            buttonsStyling: false,
+          });
+        });
+      }
+    } else {
+      for (const key in data) {
+        if (isNil(data[key]) || isEmpty(data[key])) {
+          console.log("err", key);
+
+          setError(key, {
+            type: "manual",
+          });
+        }
+      }
+    }
+  };
+
+  const onReset = () => {
+    reset();
+  };
+
+  const handleModalClosed = () => {
+    setModalType("Add New");
+    reset();
+  };
+
+  const handleUpdateinterview = (item) => {
+    setModalType("Edit");
+    setShow(true);
+    setValue("title", item.title);
+    setValue("description", item.description);
+    setValue("candidate", item.candidate?._id);
+    setValue("interviewer", item.interviewer?._id);
+
+    setValue("heureInterview", item.heureInterview);
+    setValue("dateInterview", item.dateInterview);
+    setValue("status", item.status);
+    setValue("id", item._id);
+  };
+
+  const handledelete = (item) => {
+    // setModalTypedelet(true);
+    // setShowdelet(true);
+    dispatch(deleteinterview(item._id)).then(() => {
+                    MySwal.fire({
+                      title: "Success!",
+                      text: `Interview Deleted`,
+                      icon: "success",
+                      customClass: {
+                        confirmButton: "btn btn-primary",
+                      },
+                      buttonsStyling: false,
+                    });
+                        
+
+                  });
+    // if (modalTypedelet === "delete") {
+    //   <Modal
+    //     isOpen={showdelet}
+    //     toggle={() => setShowdelet(!showdelet)}
+    //     className="modal-dialog-centered"
+    //     modalClassName="modal-info"
+    //   >
+    //     <ModalHeader
+    //       toggle={() => setShowdelet(!showdelet)}
+    //       className="bg-transparent"
+    //     >
+    //       Are you sure to delete!!
+    //     </ModalHeader>
+    //     <ModalBody>
+        
+    //       <div className="d-flex justify-content-center mb-1">
+    //         interview of user mail
+    //         {/* {item.candidate?.profileData?.userAbout?.email} */}
+    //         <Button
+    //           className="text-center mt-2 me-2 pt-50"
+    //           color="primary"
+    //           onClick={() => {
+    //             dispatch(deleteinterview(item._id)).then(() => {
+    //               MySwal.fire({
+    //                 title: "Success!",
+    //                 text: `Interview Deleted`,
+    //                 icon: "success",
+    //                 customClass: {
+    //                   confirmButton: "btn btn-primary",
+    //                 },
+    //                 buttonsStyling: false,
+    //               });
+    //             });
+    //           }}
+    //         >
+    //           Accept
+    //         </Button>
+    //         <Button
+    //           className="text-center  mt-2 pt-50"
+    //           color="danger"
+    //           onClick={() => setShowdelet(!showdelet)}
+    //         >
+    //           Cancel
+    //         </Button>
+    //       </div>
+    //     </ModalBody>
+    //   </Modal>;
+   // }
+  };
+  return (
+    <Fragment>
+      <Row>
+        <Col lg={3} className="mb-2">
+          <label className="mb-0">Title Search :</label>
+
+          <Input
+            type="text"
+            id="search-permission"
+            placeholder="Enter Interview title"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </Col>
+        <Col lg={3} className="mb-2">
+          <label className="mb-0">Date Search:</label>
+          <Flatpickr
+            value={picker}
+            placeholder="Enter Date"
+            className="form-control"
+            id="search-permission"
+            onChange={(event) => {
+              setPicker(
+                event.map((value) => {
+                  return moment(value).format("YYYY-MM-DD");
+                })
+              );
+            }}
+          />
+        </Col>
+        <Col lg={3} className="mb-2">
+          <label className="mb-0">Email Search:</label>
+
+          <Input
+            type="text"
+            id="search-permission"
+            placeholder="Enter C/E Email"
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </Col>
+        <Col lg={3}>
+          <Button
+            color="primary"
+            className="text-nowrap mt-1 "
+            block
+            onClick={() => {
+              setModalType("Add New");
+              setShow(true);
+            }}
+          >
+            <Plus className="me-1" />
+            Add New Interview
+          </Button>
+        </Col>
+      </Row>
+      <Row>
+        {interview.allInterview &&
+          interview.allInterview
+            .filter((interv) => {
+              if (query === "" && picker === "" && email === "") {
+                return interv;
+              } else if (interv.title.includes(query)) {
+                return (
+                  (interv.dateInterview.includes(picker) &&
+                    interv?.candidate?.profileData?.userAbout?.email.includes(
+                      email
+                    )) ||
+                  (interv.dateInterview.includes(picker) &&
+                    interv?.interviewer?.profileData?.userAbout?.email.includes(
+                      email
+                    ))
+                );
+              }
+            })
+            .map((item, index) => {
+              return (
+                <Col key={index} lg="4" md="6" sm="12">
+                  <Card className="card-developer-meetup">
+                    <div className="meetup-img-wrapper rounded-top text-center">
+                      <img src={illustration} height="125" />
+                    </div>
+                    <CardBody>
+                      <div className="meetup-header d-flex align-items-center">
+                        <div className="meetup-day">
+                          <Avatar
+                            color="light-primary"
+                            className="rounded me-1"
+                            icon={<Flag size={18} />}
+                          />
+                        </div>
+                        <div className="my-auto">
+                          <h6> Status</h6>
+                          <CardText className="mb-0">{item?.status}</CardText>
+                        </div>
+                      </div>
+                      <div className="meetup-header d-flex align-items-center">
+                        <div className="meetup-day">
+                          <Avatar
+                            color="light-primary"
+                            className="rounded me-1"
+                            icon={<UserCheck size={18} />}
+                          />
+                        </div>
+                        <div className="my-auto">
+                          <h6> Candidate Email:</h6>
+                          <CardText className="mb-0">
+                            {item.candidate?.profileData?.userAbout?.email}
+                          </CardText>
+                        </div>
+                      </div>
+
+                      <div className="meetup-header d-flex align-items-center">
+                        <div className="meetup-day">
+                          <Avatar
+                            color="light-primary"
+                            className="rounded me-1"
+                            icon={<Mail size={18} />}
+                          />
+                        </div>
+                        <div className="my-auto">
+                          <h6> interviewer Email:</h6>
+                          <CardText className="mb-0">
+                            {item.interviewer?.profileData?.userAbout?.email}
+                          </CardText>
+                        </div>
+                      </div>
+
+                      <div className="meetup-header d-flex align-items-center">
+                        <div className="meetup-day">
+                          <Avatar
+                            color="light-primary"
+                            className="rounded me-1"
+                            icon={<Calendar size={18} />}
+                          />
+                        </div>
+                        <div className="my-auto">
+                          <h6> Date & Time</h6>
+
+                          <CardText className="mb-0">
+                            <h6 className="mb-0">{item.dateInterview}</h6>
+                            <small>{item.heureInterview}</small>
+                          </CardText>
+                        </div>
+                      </div>
+
+                      <div className="meetup-header d-flex align-items-center">
+                        <div className="meetup-day">
+                          <Avatar
+                            color="light-primary"
+                            className="rounded me-1"
+                            icon={<Award size={18} />}
+                          />
+                        </div>
+                        <div className="my-auto">
+                          <h6> Title</h6>
+
+                          <CardTitle tag="h4" className="mb-25"></CardTitle>
+                          <CardText className="mb-0">{item.title}</CardText>
+                        </div>
+                      </div>
+
+                      <div className="meetup-header d-flex align-items-center">
+                        <div className="meetup-day">
+                          <Avatar
+                            color="light-primary"
+                            className="rounded me-1"
+                            icon={<Edit3 size={18} />}
+                          />
+                        </div>
+                        <div className="my-auto">
+                          <h6> description </h6>
+                          <CardTitle tag="h4" className="mb-25"></CardTitle>
+                          <CardText className="mb-0">
+                            {item.description}
+                          </CardText>
+                        </div>
+                      </div>
+                    </CardBody>
+
+                    <div className="d-flex justify-content-center mb-1">
+                      <Button
+                        color="primary"
+                        onClick={() => {
+                          handleUpdateinterview(item);
+                        }}
+                      >
+                        Edit
+                      </Button>
+
+                      <Button
+                        className="ms-1"
+                        color="danger"
+                        outline
+                        onClick={() => {
+                          // e.preventDefault();
+                          setModalTypedelet(true);
+                         setShowdelet(true);
+                         // handledelete();
+                        }}
+                      >
+                        Suspended
+                      </Button>
+
+                      <Modal
+                        isOpen={showdelet}
+                        toggle={() => setShowdelet(!showdelet)}
+                        className="modal-dialog-centered"
+                        modalClassName="modal-info"
+                      >
+                        <ModalHeader toggle={() => setShowdelet(!showdelet)}
+                                  className="bg-transparent"
+
+                        >
+                          Are you sure to delete!!
+                        </ModalHeader>
+                        <ModalBody>
+                          <div className="d-flex justify-content-center mb-1">
+                            interview of user mail
+                            {item.candidate?.profileData?.userAbout?.email}
+                            <Button
+                              className="text-center mt-2 me-2 pt-50"
+                              color="primary"
+                              onClick={() => {
+                                handledelete(item);
+                                setShowdelet(!showdelet);
+                              }}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              className="text-center  mt-2 pt-50"
+                              color="danger"
+                              onClick={() => setShowdelet(!showdelet)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </ModalBody>
+                      </Modal>
+                    </div>
+                  </Card>
+                </Col>
+              );
+            })}
+      </Row>
+
+      <Modal
+        isOpen={show}
+        onClosed={handleModalClosed}
+        toggle={() => setShow(!show)}
+        className="modal-dialog-centered modal-lg"
+      >
+        <ModalHeader
+          className="bg-transparent"
+          toggle={() => setShow(!show)}
+        ></ModalHeader>
+        <ModalBody className="px-sm-5 mx-50 pb-5">
+          <div className="text-center mb-2">
+            <h1 className="mb-1"> {modalType} interview Information</h1>
+            <p>Details interview.</p>
+          </div>
+          <Row
+            tag="form"
+            className="gy-1 pt-75"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <Col md={6} xs={12}>
+              <Label className="form-label" for="candidate">
+                Candidate Name
+              </Label>
+              <Controller
+                control={control}
+                name="candidate"
+                render={({ field }) => {
+                  return (
+                    <UserSelect
+                      id="candidate"
+                      className={classNames("react-select", {
+                        "is-invalid": errors.candidate,
+                      })}
+                      {...field}
+                    />
+                  );
+                }}
+              />
+              {errors.candidate && (
+                <FormFeedback>Please enter a valid candidate Name</FormFeedback>
+              )}
+            </Col>
+            <Col md={6} xs={12}>
+              <Label className="form-label" for="interviewer">
+                Interviewer Name
+              </Label>
+              <Controller
+                name="interviewer"
+                control={control}
+                render={({ field }) => (
+                  <UserSelect
+                    id="interviewer"
+                    className={classNames("react-select", {
+                      "is-invalid": errors.interviewer,
+                    })}
+                    {...field}
+                  />
+                )}
+              />
+              {errors.interviewer && (
+                <FormFeedback>
+                  Please enter a valid Interviewer Name
+                </FormFeedback>
+              )}
+            </Col>
+            <Col md={6} xs={12}>
+              <Label className="form-label" for="dateInterview">
+                date Interview
+              </Label>
+              <Controller
+                control={control}
+                name="dateInterview"
+                render={({ field }) => {
+                  return (
+                    <Flatpickr
+                      {...field}
+                      className="form-control"
+                      id="dateInterview"
+                      invalid={errors.dateInterview && true}
+                    />
+                  );
+                }}
+              />
+              {errors.dateInterview && (
+                <FormFeedback>Please enter a valid dateInterview</FormFeedback>
+              )}
+            </Col>{" "}
+            <Col md={6} xs={12}>
+              <Label className="form-label" for="heureInterview">
+                Heure Interview
+              </Label>
+              <Controller
+                control={control}
+                name="heureInterview"
+                render={({ field }) => {
+                  return (
+                    <Flatpickr
+                      {...field}
+                      className="form-control"
+                      id="heureInterview"
+                      options={{
+                        enableTime: true,
+                        noCalendar: true,
+                        dateFormat: "H:i",
+                        time_24hr: true,
+                      }}
+                      invalid={errors.heureInterview && true}
+                    />
+                  );
+                }}
+              />
+              {errors.heureInterview && (
+                <FormFeedback>Please enter a valid heureInterview</FormFeedback>
+              )}
+            </Col>
+            <Col xs={6}>
+              <Label className="form-label" for="title">
+                title
+              </Label>
+              <Controller
+                name="title"
+                control={control}
+                render={({ field }) => (
+                  <Input {...field} id="title" invalid={errors.title && true} />
+                )}
+              />
+              {errors.title && (
+                <FormFeedback>Please enter a valid title</FormFeedback>
+              )}
+            </Col>
+            <Col md={6} xs={12}>
+              <Label className="form-label" for="status">
+                status
+              </Label>
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <ParListSelect
+                    parcode="STATUSINTER"
+                    isClearable={true}
+                    className={classNames("react-select", {
+                      "is-invalid": errors.status,
+                    })}
+                    {...field}
+                  />
+                )}
+              />
+              {errors.status && (
+                <FormFeedback>Please enter a valid status</FormFeedback>
+              )}
+            </Col>
+            <Col md={10} xs={12}>
+              <Label className="form-label" for="description">
+                description
+              </Label>
+              <Controller
+                type="textarea"
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="textarea"
+                    {...field}
+                    id="description"
+                    invalid={errors.description && true}
+                  />
+                )}
+              />
+              {errors.description && (
+                <FormFeedback>Please enter a valid description</FormFeedback>
+              )}
+            </Col>
+            <Col xs={12} className="text-center mt-2 pt-50">
+              <Button type="submit" className="me-1" color="primary">
+                Submit
+              </Button>
+
+              <Button type="reset" color="secondary" outline onClick={onReset}>
+                Discard
+              </Button>
+            </Col>
+          </Row>
+        </ModalBody>
+      </Modal>
+    </Fragment>
+  );
+};
+
+export default Cardsinterview;
